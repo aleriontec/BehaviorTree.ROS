@@ -66,6 +66,14 @@ add_executable(test_bt test/test_bt.cpp)
 add_dependencies(test_bt ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_bt ${catkin_LIBRARIES} )
 
+add_executable(test_gnc test/test_gnc.cpp)
+add_dependencies(test_gnc ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(test_gnc ${catkin_LIBRARIES} )
+
+add_executable(test_gnc_utils test/test_gnc_utils.cpp)
+add_dependencies(test_gnc_utils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(test_gnc_utils ${catkin_LIBRARIES} )
+
 add_executable(test_server test/test_server.cpp)
 add_dependencies(test_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_server ${catkin_LIBRARIES} )
