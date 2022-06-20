@@ -1,6 +1,7 @@
 #include <behaviortree_ros/bt_service_node.h>
 #include <behaviortree_ros/bt_action_node.h>
 #include <ros/ros.h>
+#include <ros/package.h>
 #include <behaviortree_cpp_v3/loggers/bt_zmq_publisher.h>
 #include <std_msgs/Int32.h>
 
@@ -76,9 +77,6 @@ NodeStatus hasWsStateBeenVisited(TreeNode &self) {
 
 
 int main(int argc, char **argv) {
-    ros::init(argc, argv, "test_behavior_tree");
-    ros::NodeHandle nh;
-
     BehaviorTreeFactory factory;
 
     factory.registerNodeType<PrintValue>("PrintValue");
@@ -91,14 +89,15 @@ int main(int argc, char **argv) {
     PortsList hasWsStateBeenVisitedPorts = {InputPort<bool>("ws_state_visited"), InputPort<int>("ws_state")};
     factory.registerSimpleCondition("hasWsStateBeenVisited", hasWsStateBeenVisited, hasWsStateBeenVisitedPorts);
 
-    std::string xml_file_path = "/home/alerion/Documents/behavior_trees/gnc-test.xml";
+    std::string bt_pkg_path = ros::package::getPath("behaviortree_ros");
+    std::string xml_file_path = bt_pkg_path + "/data/gnc.xml";
     auto tree = factory.createTreeFromFile(xml_file_path);
     PublisherZMQ publisher_zmq(tree);
     printTreeRecursively(tree.rootNode());
 
     NodeStatus status = NodeStatus::IDLE;
 
-    while (ros::ok() && (status == NodeStatus::IDLE || status == NodeStatus::RUNNING)) {
+    while (status == NodeStatus::IDLE || status == NodeStatus::RUNNING) {
         status = tree.tickRoot();
         std::cout << "[ INFO] [" << ros::Time::now() << "]: Behavior Tree -> [" << status << "]" << std::endl;
         sleep(1);

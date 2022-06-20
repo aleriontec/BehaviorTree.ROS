@@ -1,6 +1,7 @@
 #include <behaviortree_ros/bt_service_node.h>
 #include <behaviortree_ros/bt_action_node.h>
 #include <ros/ros.h>
+#include <ros/package.h>
 #include <behaviortree_cpp_v3/loggers/bt_zmq_publisher.h>
 #include <std_msgs/Int32.h>
 
@@ -65,8 +66,10 @@ int main(int argc, char **argv) {
     };
     factory.registerBuilder<WaitReachWsState>("WaitReachWsState", builder_WaitReachWsState);
 
-    std::string xml_file_path = "/home/alerion/Documents/behavior_trees/gnc-test.xml";
+    std::string bt_pkg_path = ros::package::getPath("behaviortree_ros");
+    std::string xml_file_path = bt_pkg_path + "/data/gnc.xml";
     auto tree = factory.createTreeFromFile(xml_file_path);
+
     PublisherZMQ publisher_zmq(tree);
     printTreeRecursively(tree.rootNode());
 

@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<root main_tree_to_execute="BehaviorTree">
+    <!-- ////////// -->
+    <BehaviorTree ID="BehaviorTree">
+        <Sequence name="Perform Inspection">
+            <Action ID="WaitReachWsState" name="Take off" target_ws_state="3"/>
+            <SubTree ID="performBlade"/>
+            <Action ID="WaitReachWsState" name="Next blade" target_ws_state="24"/>
+            <SubTree ID="performBlade"/>
+            <Action ID="WaitReachWsState" name="Next blade" target_ws_state="24"/>
+            <SubTree ID="performBlade"/>
+            <Action ID="WaitReachWsState" name="Go home" target_ws_state="26"/>
+            <Action ID="WaitReachWsState" name="Land" target_ws_state="27"/>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="performBlade">
+        <Sequence>
+            <Action ID="WaitReachWsState" name="Inspection position" target_ws_state="5"/>
+            <Action ID="WaitReachWsState" name="Edge up 1" target_ws_state="7"/>
+            <Action ID="WaitReachWsState" name="Shell down 1" target_ws_state="11"/>
+            <Action ID="WaitReachWsState" name="Edge up 2" target_ws_state="16"/>
+            <Action ID="WaitReachWsState" name="Shell down 2" target_ws_state="21"/>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <TreeNodesModel>
+        <Action ID="GetWsState">
+            <input_port default="get_ws_state" name="service_name"/>
+            <input_port default="100" name="timeout"/>
+            <output_port default="{ws_state}" name="ws_state"/>
+        </Action>
+        <Action ID="GetWsStateStatus">
+            <output_port default="{active}" name="active"/>
+            <input_port default="get_ws_state_status" name="service_name"/>
+            <input_port default="100" name="timeout"/>
+        </Action>
+        <Action ID="PrintBool">
+            <input_port name="message"/>
+        </Action>
+        <Action ID="PrintValue">
+            <input_port name="message"/>
+        </Action>
+        <Action ID="WaitReachWsState">
+            <input_port name="target_ws_state"/>
+        </Action>
+        <Condition ID="hasWsStateBeenVisited">
+            <input_port name="ws_state"/>
+            <input_port name="ws_state_visited"/>
+        </Condition>
+        <Condition ID="isWsStateActive">
+            <input_port default="{active}" name="active"/>
+        </Condition>
+        <Condition ID="isWsStateNew">
+            <input_port default="{ws_state}" name="ws_state"/>
+        </Condition>
+        <Condition ID="isWsStateReached">
+            <input_port name="target_ws_state"/>
+            <input_port name="ws_state"/>
+            <output_port name="ws_state_visited"/>
+        </Condition>
+        <SubTree ID="performBlade"/>
+    </TreeNodesModel>
+    <!-- ////////// -->
+</root>
+
