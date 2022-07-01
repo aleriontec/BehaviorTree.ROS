@@ -1,0 +1,206 @@
+<?xml version="1.0"?>
+<root main_tree_to_execute="BehaviorTree">
+    <!-- ////////// -->
+    <BehaviorTree ID="BehaviorTree">
+        <Sequence>
+            <SubTree ID="getSensorsData"/>
+            <Fallback>
+                <SubTree ID="warnings"/>
+                <Sequence>
+                    <SubTree ID="preflightChecks"/>
+                    <Fallback>
+                        <Condition ID="isBladeCompleted" blade="A"/>
+                        <SubTree ID="performBlade"/>
+                    </Fallback>
+                    <Fallback>
+                        <Condition ID="isBladeCompleted" blade="B"/>
+                        <SubTree ID="performBlade"/>
+                    </Fallback>
+                    <Fallback>
+                        <Condition ID="isBladeCompleted" blade="C"/>
+                        <SubTree ID="performBlade"/>
+                    </Fallback>
+                    <SubTree ID="postInspection"/>
+                </Sequence>
+            </Fallback>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="getSensorsData">
+        <Sequence>
+            <Action ID="GetDroneData" drone_data="{drone_data}"/>
+            <Action ID="GerLidarData" lidar_data="{lidar_data}"/>
+            <Action ID="GetCameraData" camera_data="{camera_data}"/>
+            <Action ID="GetForecastData" forecast_data="{forecast_data}"/>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="performBlade">
+        <Sequence>
+            <Fallback>
+                <Condition ID="isPhaseCompleted" phase="Edge 1"/>
+                <SubTree ID="performPhase" first_corner="E" second_corner="A"/>
+            </Fallback>
+            <Fallback>
+                <Condition ID="isPhaseCompleted" phase="Shell 1"/>
+                <SubTree ID="performPhase" first_corner="B" second_corner="F"/>
+            </Fallback>
+            <Fallback>
+                <Condition ID="isPhaseCompleted" phase="Edge 2"/>
+                <SubTree ID="performPhase" first_corner="G" second_corner="C"/>
+            </Fallback>
+            <Fallback>
+                <Condition ID="isPhaseCompleted" phase="Shell 2"/>
+                <SubTree ID="performPhase" first_corner="D" second_corner="H"/>
+            </Fallback>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="performPhase">
+        <Sequence>
+            <Fallback>
+                <Condition ID="isDroneAt" data="{drone_data}" target="WP1"/>
+                <Action ID="flyTo" target="WP1" visited="{visited_WP1}"/>
+            </Fallback>
+            <Fallback>
+                <Condition ID="isDroneAt" data="{drone_data}" target="WP2"/>
+                <Sequence name="Perform phase">
+                    <Fallback>
+                        <Condition ID="Condition" data="{lidar_data}" name="Dist to blade ~= 6 meters"/>
+                        <Action ID="Action" name="Recalculate target"/>
+                    </Fallback>
+                    <Fallback>
+                        <Condition ID="Condition" data="{camera_data}" name="Blade in image"/>
+                        <Action ID="Action" name="Recalculate target"/>
+                    </Fallback>
+                    <Action ID="flyTo" target="WP2" visited="{visited_WP2}"/>
+                </Sequence>
+            </Fallback>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="postInspection">
+        <Sequence>
+            <Fallback>
+                <Condition ID="isDroneAt" data="{drone_data}" target="HUB"/>
+                <Action ID="flyTo" target="HUB" visited="{visited_HUB}"/>
+            </Fallback>
+            <Fallback>
+                <Inverter>
+                    <Condition ID="Condition" data="{drone_data}" name="Drone in air"/>
+                </Inverter>
+                <Action ID="Action" name="Land"/>
+            </Fallback>
+            <Fallback>
+                <Inverter>
+                    <Condition ID="Condition" data="{drone_data}" name="Drone armed"/>
+                </Inverter>
+                <Sequence>
+                    <Action ID="Action" name="Disarm drone"/>
+                    <Action ID="Action" name="Rosbag stop"/>
+                </Sequence>
+            </Fallback>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="preflightChecks">
+        <Sequence name="Preflight checks">
+            <Fallback>
+                <Condition ID="Condition" data="{drone_data}" name="Inspection loaded"/>
+                <Action ID="Action" name="Load inspection"/>
+            </Fallback>
+            <Fallback>
+                <Condition ID="Condition" data="{drone_data}" name="Drone armed"/>
+                <Sequence>
+                    <Action ID="Action" name="Arm drone"/>
+                    <Action ID="Action" name="Rosbag start"/>
+                </Sequence>
+            </Fallback>
+            <Fallback>
+                <Condition ID="Condition" data="{drone_data}" name="Drone in air"/>
+                <Fallback>
+                    <Condition ID="isDroneAt" data="{drone_data}" target="HOME"/>
+                    <Action ID="Action" name="Take off"/>
+                </Fallback>
+            </Fallback>
+            <Fallback>
+                <Condition ID="positionVisited" position="{visited_HUB}"/>
+                <Action ID="flyTo" target="HUB" visited="{visited_HUB}"/>
+            </Fallback>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="warnings">
+        <Fallback name="Warnings">
+            <Fallback>
+                <Condition ID="Warning" data="{forecast_data}" name="High wind"/>
+                <Action ID="flyTo" target="HOME" visited="{visited_HOME}"/>
+            </Fallback>
+            <Fallback>
+                <Condition ID="Warning" data="{drone_data}" name="Low battery"/>
+                <Action ID="flyTo" target="HOME" visited="{visited_HOME}"/>
+            </Fallback>
+            <Fallback>
+                <Condition ID="Warning" data="{drone_data}" name="Poor GNSS"/>
+                <Action ID="Action" name="Pilot take control"/>
+            </Fallback>
+            <Fallback>
+                <Condition ID="Warning" data="{forecast_data}" name="Forecast"/>
+                <Action ID="flyTo" target="HOME" visited="{visited_HOME}"/>
+            </Fallback>
+        </Fallback>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <TreeNodesModel>
+        <Action ID="Action"/>
+        <Condition ID="Condition">
+            <input_port name="data"/>
+        </Condition>
+        <Action ID="GerLidarData">
+            <output_port name="lidar_data"/>
+        </Action>
+        <Action ID="GetCameraData">
+            <output_port name="camera_data"/>
+        </Action>
+        <Action ID="GetDroneData">
+            <output_port name="drone_data"/>
+        </Action>
+        <Action ID="GetDronePose">
+            <output_port name="drone_pose"/>
+        </Action>
+        <Action ID="GetForecastData">
+            <input_port name="forecast_data"/>
+        </Action>
+        <Condition ID="Warning">
+            <input_port name="data"/>
+        </Condition>
+        <Action ID="flyTo">
+            <input_port name="target"/>
+            <output_port name="visited"/>
+        </Action>
+        <SubTree ID="getSensorsData"/>
+        <Condition ID="isBladeCompleted">
+            <input_port name="blade"/>
+        </Condition>
+        <Condition ID="isDroneAt">
+            <input_port name="data"/>
+            <input_port name="target"/>
+        </Condition>
+        <Condition ID="isPhaseCompleted">
+            <input_port name="phase"/>
+        </Condition>
+        <SubTree ID="performBlade"/>
+        <SubTree ID="performPhase">
+            <input_port name="first_corner"/>
+            <input_port name="second_corner"/>
+        </SubTree>
+        <Condition ID="positionVisited">
+            <input_port name="position"/>
+        </Condition>
+        <SubTree ID="postInspection"/>
+        <SubTree ID="preflightChecks"/>
+        <SubTree ID="warnings"/>
+    </TreeNodesModel>
+    <!-- ////////// -->
+</root>
+
