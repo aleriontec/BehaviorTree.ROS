@@ -14,6 +14,16 @@
         </Fallback>
     </BehaviorTree>
     <!-- ////////// -->
+    <BehaviorTree ID="NavigateDetecting">
+        <Fallback>
+            <Condition ID="GNCDetectObject" object="Nacelle"/>
+            <Control ID="PipelineSequence">
+                <Action ID="ComputePathToPose" goal="HUB" path="{path}" planner_id="" server_timeout="" service_name="" start=""/>
+                <Action ID="FollowPath" controller_id="FollowPath" goal_checker_id="GoalChecker" path="{path}" server_timeout="" service_name=""/>
+            </Control>
+        </Fallback>
+    </BehaviorTree>
+    <!-- ////////// -->
     <BehaviorTree ID="NavigateWithReplanning">
         <Control ID="PipelineSequence">
             <Control ID="RecoveryNode" number_of_retries="1">
@@ -23,13 +33,16 @@
                 </ReactiveSequence>
                 <Action ID="GNCUnknown" name="Solution to failure computingPath"/>
             </Control>
-            <Control ID="RecoveryNode" number_of_retries="1">
-                <Sequence>
-                    <Action ID="GNCFollowPath" controller_id="FollowPath" current_target="{target}" goal_checker_id="GoalChecker" path="{path}" server_timeout="" service_name=""/>
-                    <Action ID="GNCTakeSnapshot" target="{target}"/>
-                </Sequence>
-                <Action ID="GNCComputeOfflimitFix" goals="{prism_wps}"/>
-            </Control>
+            <Fallback>
+                <Condition ID="GNCDetectObject" object="Root/Tip"/>
+                <Control ID="RecoveryNode" number_of_retries="1">
+                    <Sequence>
+                        <Action ID="GNCFollowPath" controller_id="FollowPath" current_target="{target}" goal_checker_id="GoalChecker" path="{path}" server_timeout="" service_name=""/>
+                        <Action ID="GNCTakeSnapshot" target="{target}"/>
+                    </Sequence>
+                    <Action ID="GNCComputeOfflimitFix" goals="{prism_wps}"/>
+                </Control>
+            </Fallback>
         </Control>
     </BehaviorTree>
     <!-- ////////// -->
@@ -143,10 +156,7 @@
                     <Action ID="NavigateToPose" behavior_tree="" goal="Take off" name="Take off" server_timeout="" service_name=""/>
                 </Fallback>
             </Fallback>
-            <Fallback>
-                <Condition ID="GoalReached" global_frame="" goal="HUB" robot_base_frame=""/>
-                <Action ID="NavigateToPose" behavior_tree="" goal="HUB" server_timeout="" service_name=""/>
-            </Fallback>
+            <SubTree ID="NavigateDetecting"/>
         </Sequence>
     </BehaviorTree>
     <!-- ////////// -->
@@ -155,6 +165,10 @@
             <Sequence>
                 <Condition ID="IsBatteryLow" battery_topic="" is_voltage="" min_battery="" name="isWindHigh"/>
                 <Action ID="NavigateToPose" behavior_tree="" goal="HOME" server_timeout="" service_name=""/>
+            </Sequence>
+            <Sequence>
+                <Condition ID="GNCCollisionDetected"/>
+                <Action ID="NavigateToPose" behavior_tree="" goal="" server_timeout="" service_name=""/>
             </Sequence>
             <Sequence>
                 <Condition ID="IsBatteryLow" battery_topic="" is_voltage="" min_battery=""/>
@@ -245,6 +259,7 @@
             <input_port name="service_name">Service name</input_port>
         </Action>
         <Action ID="GNCAction"/>
+        <Condition ID="GNCCollisionDetected"/>
         <Action ID="GNCComputeOfflimitFix">
             <inout_port name="goals"/>
         </Action>
@@ -257,6 +272,9 @@
         </Action>
         <Condition ID="GNCCondition">
             <input_port name="data"/>
+        </Condition>
+        <Condition ID="GNCDetectObject">
+            <input_port name="object"/>
         </Condition>
         <Action ID="GNCFollowPath">
             <input_port default="FollowPath" name="controller_id"/>
@@ -313,6 +331,7 @@
             <input_port name="server_timeout"> Server timeout </input_port>
         </Condition>
         <Condition ID="IsStuck"/>
+        <SubTree ID="NavigateDetecting"/>
         <Action ID="NavigateThroughPoses">
             <input_port name="behavior_tree">Behavior tree to run</input_port>
             <input_port name="goals">Goals</input_port>
